@@ -12,6 +12,7 @@ void QUEUE_init(queue_t* queue,size_t element_size){
         queue->element_size=element_size;
 }
 void QUEUE_push(queue_t* queue,void* element){
+    if(!element) return;
     node_t* node=safe_alloc(sizeof(node_t)+queue->element_size,1,NULL);
     node->next=NULL;
     memcpy(node->element,element,queue->element_size);
@@ -26,7 +27,9 @@ void QUEUE_push(queue_t* queue,void* element){
 }
 void QUEUE_pop(queue_t* queue,void* element){
     if(!queue->length) return;
-    memcpy(element,queue->begin->element,queue->element_size);
+    if(element){
+        memcpy(element,queue->begin->element,queue->element_size);
+    }
     if(queue->length==1){
         free(queue->begin);
         queue->begin=NULL;
@@ -47,6 +50,7 @@ void QUEUE_destroy(queue_t* queue){
         current=tmp;
     }
     queue->begin=NULL;
+    queue->end=NULL;
 }
 
 size_t QUEUE_length(queue_t* queue){
