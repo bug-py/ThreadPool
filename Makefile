@@ -5,7 +5,7 @@ BIN = ./bin/
 TEST = ./test/
 
 LIBPATH= ./lib/
-LIBNAME = ThreadPool
+LIBNAME = threadpool
 LIB = $(LIBPATH)lib${LIBNAME}.a
 
 FLAG = -Wall -I$(INCLUDE) -Werror -Wextra
@@ -28,7 +28,7 @@ $(OBJ)threadpool.o: $(SRC)threadpool.c $(INCLUDE)threadpool.h
 	gcc $(FLAG) -c $< -o $@
 
 $(BIN)map.exe : $(TEST)map.c  $(LIB)
-	gcc $(FLAG) -L$(LIBPATH) -l$(LIBNAME) $< -o $@
+	gcc $(FLAG) $<  -L$(LIBPATH) -l$(LIBNAME) -o $@
 
 test : $(BIN)map.exe
 
