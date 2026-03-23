@@ -57,6 +57,6 @@ size_t QUEUE_length(queue_t* queue){
     return queue->length;
 }
 
- bool QUEUE_empty(queue_t* queue){
+bool QUEUE_empty(queue_t* queue){
     return queue->length==0;
 }
