@@ -20,6 +20,7 @@ int main(){
     THREADPOOL_sumbit(&tp,&print,NULL);
     THREADPOOL_sumbit(&tp,&print,NULL);
     THREADPOOL_sumbit(&tp,&print,NULL);
-    sleep(10);
+    sleep(2);
+    THREADPOOL_destroy(&tp);
     return 0;
 }

@@ -19,4 +19,5 @@ typedef struct{
 
 void THREADPOOL_init(threadpool_t* threadpool,size_t numbers_threads);
 void THREADPOOL_sumbit(threadpool_t* threadpool,func_thread_t func,void* arg);
+void THREADPOOL_destroy(threadpool_t* tp);
 #endif

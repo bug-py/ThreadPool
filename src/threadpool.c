@@ -31,30 +31,44 @@ void* worker(void* thread_arg){
 
 }
 
-void THREADPOOL_init(threadpool_t* threadpool,size_t number_threads){
+void THREADPOOL_init(threadpool_t* tp,size_t number_threads){
     if(!number_threads) number_threads=1;
-    threadpool->number_threads=number_threads;
-    threadpool->running=true;
-    pthread_mutex_init(&(threadpool->lock),NULL);
-    pthread_cond_init(&(threadpool->cond),NULL);
-    QUEUE_init(&(threadpool->queue),sizeof(task_t));
-    threadpool->threads=safe_alloc(sizeof(pthread_t),number_threads,NULL);
+    tp->number_threads=number_threads;
+    tp->running=true;
+    pthread_mutex_init(&(tp->lock),NULL);
+    pthread_cond_init(&(tp->cond),NULL);
+    QUEUE_init(&(tp->queue),sizeof(task_t));
+    tp->threads=safe_alloc(sizeof(pthread_t),number_threads,NULL);
     for(size_t i=0;i<number_threads;i++){
         arg_thread_t* arg=safe_alloc(sizeof(arg_thread_t),1,NULL);
         arg->id=i;
-        arg->running=(&(threadpool->running));
-        arg->lock=(&(threadpool->lock));
-        arg->cond=(&(threadpool->cond));
-        arg->queue=(&(threadpool->queue));
-        pthread_create(threadpool->threads+i,NULL,&worker,arg);
+        arg->running=(&(tp->running));
+        arg->lock=(&(tp->lock));
+        arg->cond=(&(tp->cond));
+        arg->queue=(&(tp->queue));
+        pthread_create(tp->threads+i,NULL,&worker,arg);
     }
 }
-void THREADPOOL_sumbit(threadpool_t* threadpool,func_thread_t func,void* arg){
+void THREADPOOL_sumbit(threadpool_t* tp,func_thread_t func,void* arg){
     task_t task;
     task.func=func;
     task.arg=arg;
-    pthread_mutex_lock(&(threadpool->lock));
-    QUEUE_push(&(threadpool->queue),&task);
-    pthread_cond_signal(&(threadpool->cond));
-    pthread_mutex_unlock(&(threadpool->lock));
+    pthread_mutex_lock(&(tp->lock));
+    QUEUE_push(&(tp->queue),&task);
+    pthread_cond_signal(&(tp->cond));
+    pthread_mutex_unlock(&(tp->lock));
+}
+
+void THREADPOOL_destroy(threadpool_t* tp){
+    pthread_mutex_lock(&(tp->lock));
+    tp->running=false;
+    pthread_cond_broadcast(&(tp->cond));
+    pthread_mutex_unlock(&(tp->lock));
+    for(size_t i=0;i<tp->number_threads;i++){
+        pthread_join(tp->threads[i],NULL);
+    }
+    free(tp->threads);
+    pthread_mutex_destroy(&(tp->lock));
+    pthread_cond_destroy(&(tp->cond));
+    QUEUE_destroy(&(tp->queue));
 }
