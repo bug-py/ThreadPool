@@ -1,11 +1,19 @@
 #include "threadpool.h"
 #include "alloc.h"
 #include <stdlib.h>
+typedef struct {
+    func_thread_t func;
+    futur_t* futur;
+    void* arg;
+}task_t;
+
 typedef struct{
     size_t id;
     bool* running;
+    size_t* worker;
     pthread_mutex_t* lock;
     pthread_cond_t* cond;
+    pthread_cond_t* empty;
     queue_t* queue;
 }arg_thread_t;
 
@@ -25,6 +33,7 @@ void* worker(void* thread_arg){
         }
 
         QUEUE_pop(arg->queue,&current);
+        *(arg->worker)=*(arg->worker)+1;
         pthread_mutex_unlock(arg->lock);
 
         if(current.futur){
@@ -43,6 +52,12 @@ void* worker(void* thread_arg){
         }else{
             current.func(arg->id,current.arg);
         }
+        pthread_mutex_lock(arg->lock);
+        *(arg->worker)=*(arg->worker)-1;
+        if(*(arg->worker)==0 && QUEUE_empty(arg->queue)){
+            pthread_cond_broadcast(arg->empty);
+        }
+        pthread_mutex_unlock(arg->lock);
        
     }
     
@@ -53,21 +68,25 @@ void THREADPOOL_init(threadpool_t* tp,size_t number_threads){
     if(!number_threads) number_threads=1;
     tp->number_threads=number_threads;
     tp->running=true;
+    tp->worker=0;
     pthread_mutex_init(&(tp->lock),NULL);
     pthread_cond_init(&(tp->cond),NULL);
+    pthread_cond_init(&(tp->empty),NULL);
     QUEUE_init(&(tp->queue),sizeof(task_t));
     tp->threads=safe_alloc(sizeof(pthread_t),number_threads,NULL);
     for(size_t i=0;i<number_threads;i++){
         arg_thread_t* arg=safe_alloc(sizeof(arg_thread_t),1,NULL);
         arg->id=i;
         arg->running=(&(tp->running));
+        arg->worker=(&(tp->worker));
         arg->lock=(&(tp->lock));
         arg->cond=(&(tp->cond));
+        arg->empty=(&(tp->empty));
         arg->queue=(&(tp->queue));
         pthread_create(tp->threads+i,NULL,&worker,arg);
     }
 }
-futur_t* THREADPOOL_sumbit(threadpool_t* tp,func_thread_t func,void* arg,bool get_futur){
+futur_t* THREADPOOL_submit(threadpool_t* tp,func_thread_t func,void* arg,bool get_futur){
     futur_t* futur;
     if(get_futur){
         futur=safe_alloc(sizeof(futur_t),1,NULL);
@@ -88,7 +107,13 @@ futur_t* THREADPOOL_sumbit(threadpool_t* tp,func_thread_t func,void* arg,bool ge
     pthread_mutex_unlock(&(tp->lock));
     return futur;
 }
-
+void THREADPOOL_wait(threadpool_t* tp){
+    pthread_mutex_lock(&(tp->lock));
+    while(tp->worker>0 || QUEUE_empty(&(tp->queue))==false){
+        pthread_cond_wait(&(tp->empty),&(tp->lock));
+    }
+    pthread_mutex_unlock(&(tp->lock));
+}
 void THREADPOOL_destroy(threadpool_t* tp){
     pthread_mutex_lock(&(tp->lock));
     tp->running=false;
@@ -100,6 +125,7 @@ void THREADPOOL_destroy(threadpool_t* tp){
     free(tp->threads);
     pthread_mutex_destroy(&(tp->lock));
     pthread_cond_destroy(&(tp->cond));
+    pthread_cond_destroy(&(tp->empty));
     QUEUE_destroy(&(tp->queue));
 }
 state_func_t FUTUR_state(futur_t* futur){
@@ -120,7 +146,11 @@ void* FUTUR_get(futur_t* futur){
 }
 
 void FUTUR_destroy(futur_t* futur){
-    if(futur->state!=FUNC_FINISH) return;
+    pthread_mutex_lock(&(futur->lock));
+    while(futur->state!=FUNC_FINISH){
+        pthread_cond_wait(&(futur->cond),&(futur->lock));
+    }
+    pthread_mutex_unlock(&(futur->lock));
     pthread_cond_destroy(&(futur->cond));
     pthread_mutex_destroy(&(futur->lock));
     free(futur);

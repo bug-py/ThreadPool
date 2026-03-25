@@ -14,22 +14,21 @@ typedef struct{
     state_func_t state;
     void* result;
 }futur_t;
-typedef struct {
-    func_thread_t func;
-    futur_t* futur;
-    void* arg;
-}task_t;
+
 typedef struct{
     size_t number_threads;
+    size_t worker;
     pthread_t* threads;
     pthread_mutex_t lock;
     pthread_cond_t cond;
+    pthread_cond_t empty;
     queue_t queue;
     bool running;
 }threadpool_t;
 
-void THREADPOOL_init(threadpool_t* threadpool,size_t numbers_threads);
-futur_t* THREADPOOL_sumbit(threadpool_t* threadpool,func_thread_t func,void* arg,bool get_futur);
+void THREADPOOL_init(threadpool_t* tp,size_t numbers_threads);
+futur_t* THREADPOOL_submit(threadpool_t* tp,func_thread_t func,void* arg,bool get_futur);
+void THREADPOOL_wait(threadpool_t* tp);
 void THREADPOOL_destroy(threadpool_t* tp);
 
 state_func_t FUTUR_state(futur_t* futur);

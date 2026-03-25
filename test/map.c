@@ -61,9 +61,12 @@ bool* parallelmap(size_t* array,size_t len){
     bool* result=malloc(sizeof(bool)*len);
     THREADPOOL_init(&tp,8);
     for(size_t i=0;i<len;i++){
-       futurs[i]=THREADPOOL_sumbit(&tp,&ParalleIsPrime,array+i,true);
+       futurs[i]=THREADPOOL_submit(&tp,&ParalleIsPrime,array+i,true);
     }
+    THREADPOOL_wait(&tp);
+    printf("Task ending\n");
     for(size_t i=0;i<len;i++){
+        printf("ok\n");
         result[i]=(bool)FUTUR_get(futurs[i]);
         FUTUR_destroy(futurs[i]);
     }
