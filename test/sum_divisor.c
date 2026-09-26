@@ -16,16 +16,16 @@ size_t sum_divisor(size_t number){
 }
 
 void* wrapper_sum_divisor(int id,void* arg){
-    size_t number=*(size_t*)arg;
-    size_t sum=sum_divisor(number);
-    printf("THREAD : %i | NUMBER : %lu | SUM DIVISOR: %lu\n",id,number,sum);
+    long long unsigned int number=*(size_t*)arg;
+    long long unsigned int sum=sum_divisor(number);
+    printf("THREAD : %i | NUMBER : %llu | SUM DIVISOR: %llu\n",id,number,sum);
     return NULL;
 }
 void single_thread(size_t* array,size_t len){
     for(size_t i=0;i<len;i++){
-      size_t number=array[i];
-      size_t sum=sum_divisor(number);
-      printf("THREAD : 0 | NUMBER : %lu | SUM DIVISOR: %lu\n",number,sum);
+      long long unsigned int number=array[i];
+      long long unsigned int sum=sum_divisor(number);
+      printf("THREAD : 0 | NUMBER : %llu | SUM DIVISOR: %llu\n",number,sum);
     }
 }
 void multi_thread(size_t* array,size_t len){

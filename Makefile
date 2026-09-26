@@ -8,7 +8,7 @@ LIBPATH= ./lib/
 LIBNAME = threadpool
 LIB = $(LIBPATH)lib${LIBNAME}.a
 
-FLAG = -Wall -I$(INCLUDE) -Wextra
+FLAG = -Wall -I$(INCLUDE) -Werror -Wextra
 
 .PHONY : all clean test
 
@@ -28,7 +28,7 @@ $(OBJ)threadpool.o: $(SRC)threadpool.c $(INCLUDE)threadpool.h
 	gcc $(FLAG) -c $< -o $@
 
 $(BIN)sum_divisor.exe : $(TEST)sum_divisor.c  $(LIB)
-	gcc $(FLAG) $<  -L$(LIBPATH) -l$(LIBNAME) -lm -o $@
+	gcc $(FLAG) $<  -L$(LIBPATH) -l$(LIBNAME)  -o $@
 
 test : $(BIN)sum_divisor.exe
 	bin/sum_divisor.exe
