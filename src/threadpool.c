@@ -86,16 +86,12 @@ void THREADPOOL_init(threadpool_t* tp,size_t number_threads){
         pthread_create(tp->threads+i,NULL,&worker,arg);
     }
 }
-futur_t* THREADPOOL_submit(threadpool_t* tp,func_thread_t func,void* arg,bool get_futur){
-    futur_t* futur;
-    if(get_futur){
-        futur=safe_alloc(sizeof(futur_t),1,NULL);
+futur_t* THREADPOOL_submit(threadpool_t* tp,func_thread_t func,void* arg,futur_t* futur){
+    if(futur){
         pthread_cond_init(&(futur->cond),NULL);
         pthread_mutex_init(&(futur->lock),NULL);
         futur->state=FUNC_WAIT;
         futur->result=NULL;
-    }else{
-        futur=NULL;
     }
     task_t task;
     task.func=func;
@@ -109,7 +105,7 @@ futur_t* THREADPOOL_submit(threadpool_t* tp,func_thread_t func,void* arg,bool ge
 }
 void THREADPOOL_wait(threadpool_t* tp){
     pthread_mutex_lock(&(tp->lock));
-    while(tp->worker>0 || QUEUE_empty(&(tp->queue))==false){
+    while(tp->worker || !QUEUE_empty(&(tp->queue))){
         pthread_cond_wait(&(tp->empty),&(tp->lock));
     }
     pthread_mutex_unlock(&(tp->lock));

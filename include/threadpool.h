@@ -27,7 +27,7 @@ typedef struct{
 }threadpool_t;
 
 void THREADPOOL_init(threadpool_t* tp,size_t numbers_threads);
-futur_t* THREADPOOL_submit(threadpool_t* tp,func_thread_t func,void* arg,bool get_futur);
+futur_t* THREADPOOL_submit(threadpool_t* tp,func_thread_t func,void* arg,futur_t* futur);
 void THREADPOOL_wait(threadpool_t* tp);
 void THREADPOOL_destroy(threadpool_t* tp);
 
